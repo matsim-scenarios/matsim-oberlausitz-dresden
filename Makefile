@@ -1,5 +1,5 @@
 
-N := template
+N := oberlausitz-dresden
 V := v1.0
 CRS := EPSG:25832
 
@@ -103,51 +103,55 @@ input/freight-trips.xml.gz: input/$V/$N-$V-network.xml.gz
 	 --shp ../shared-svn/projects/$N/data/shp/$N.shp --shp-crs $(CRS)\
 	 --output $@
 
-input/$V/prepare-25pct.plans.xml.gz:
+input/$V/prepare-100pct.plans.xml.gz:
 	$(sc) prepare trajectory-to-plans\
-	 --name prepare --sample-size 0.25 --output input/$V\
-	 --population ../shared-svn/projects/$N/matsim-input-files/population.xml.gz\
-	 --attributes  ../shared-svn/projects/$N/matsim-input-files/personAttributes.xml.gz
+	 --name prepare --sample-size 1 --output input/$V\
+	 --population ../shared-svn/projects/matsim-$N/data/snz/20241129_Teilmodell_Hoyerswerda/Teilmodell/populationATA.xml.gz\
+	 --attributes  ../shared-svn/projects/matsim-$N/data/snz/20241129_Teilmodell_Hoyerswerda/Teilmodell/personAttributesATA.xml.gz
 
-	$(sc) prepare resolve-grid-coords\
-	 input/$V/prepare-25pct.plans.xml.gz\
-	 --input-crs $(CRS)\
-	 --grid-resolution 300\
-	 --landuse ../matsim-leipzig/scenarios/input/landuse/landuse.shp\
-	 --output $@
+#	$(sc) prepare resolve-grid-coords\
+#	 input/$V/prepare-25pct.plans.xml.gz\
+#	 --input-crs $(CRS)\
+#	 --grid-resolution 300\
+#	 --landuse ../matsim-leipzig/scenarios/input/landuse/landuse.shp\
+#	 --output $@
 
-input/$V/$N-$V-25pct.plans-initial.xml.gz: input/freight-trips.xml.gz input/$V/$N-$V-network.xml.gz input/$V/prepare-25pct.plans.xml.gz
-	$(sc) prepare generate-short-distance-trips\
- 	 --population input/$V/prepare-25pct.plans.xml.gz\
- 	 --input-crs $(CRS)\
-	 --shp ../shared-svn/projects/$N/data/shp/$N.shp --shp-crs $(CRS)\
- 	 --num-trips 111111 # FIXME
+input/$V/$N-$V-100pct.plans-initial.xml.gz: input/$V/prepare-100pct.plans.xml.gz
 
-	$(sc) prepare adjust-activity-to-link-distances input/$V/prepare-25pct.plans-with-trips.xml.gz\
-	 --shp ../shared-svn/projects/$N/data/shp/$N.shp --shp-crs $(CRS)\
-     --scale 1.15\
-     --input-crs $(CRS)\
-     --network input/$V/$N-$V-network.xml.gz\
-     --output input/$V/prepare-25pct.plans-adj.xml.gz
+	# Use direct input for now
+	cp $< $@
 
-	$(sc) prepare xy-to-links --network input/$V/$N-$V-network.xml.gz --input input/$V/prepare-25pct.plans-adj.xml.gz --output $@
+#	$(sc) prepare generate-short-distance-trips\
+# 	 --population input/$V/prepare-25pct.plans.xml.gz\
+# 	 --input-crs $(CRS)\
+#	 --shp ../shared-svn/projects/$N/data/shp/$N.shp --shp-crs $(CRS)\
+# 	 --num-trips 111111 # FIXME
 
-	$(sc) prepare fix-subtour-modes --input $@ --output $@
+#	$(sc) prepare adjust-activity-to-link-distances input/$V/prepare-25pct.plans-with-trips.xml.gz\
+#	 --shp ../shared-svn/projects/$N/data/shp/$N.shp --shp-crs $(CRS)\
+#     --scale 1.15\
+#     --input-crs $(CRS)\
+#     --network input/$V/$N-$V-network.xml.gz\
+#     --output input/$V/prepare-25pct.plans-adj.xml.gz
 
-	$(sc) prepare merge-populations $@ $< --output $@
+#	$(sc) prepare xy-to-links --network input/$V/$N-$V-network.xml.gz --input input/$V/prepare-25pct.plans-adj.xml.gz --output $@
 
-	$(sc) prepare extract-home-coordinates $@ --csv input/$V/$N-$V-homes.csv
+#	$(sc) prepare fix-subtour-modes --input $@ --output $@
 
-	$(sc) prepare downsample-population $@\
-    	 --sample-size 0.25\
-    	 --samples 0.1 0.01\
+#	$(sc) prepare merge-populations $@ $< --output $@
+
+#	$(sc) prepare extract-home-coordinates $@ --csv input/$V/$N-$V-homes.csv
+
+#	$(sc) prepare downsample-population $@\
+#    	 --sample-size 0.25\
+#    	 --samples 0.1 0.01\
 
 
-check: input/$V/$N-$V-25pct.plans-initial.xml.gz
+check: input/$V/$N-$V-100pct.plans-initial.xml.gz
 	$(sc) analysis check-population $<\
  	 --input-crs $(CRS)\
-	 --shp ../shared-svn/projects/$N/data/shp/$N.shp --shp-crs $(CRS)
+	 --shp ../shared-svn/projects/matsim-$N/data/snz/20241129_Teilmodell_Hoyerswerda/Teilmodell/UG.shp/UG.shp --shp-crs $(CRS)
 
 # Aggregated target
-prepare: input/$V/$N-$V-25pct.plans-initial.xml.gz input/$V/$N-$V-network-with-pt.xml.gz
+prepare: input/$V/$N-$V-100pct.plans-initial.xml.gz input/$V/$N-$V-network-with-pt.xml.gz
 	echo "Done"

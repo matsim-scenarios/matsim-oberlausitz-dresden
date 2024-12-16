@@ -1,4 +1,4 @@
-# The MATSim Open Template Scenario
+# The MATSim Oberlausitz/Dresden Scenario
 
 ![Build Status](https://github.com/matsim-scenarios/matsim-scenario-template/workflows/build/badge.svg?branch=main)
 ![license](https://img.shields.io/github/license/matsim-scenarios/matsim-scenario-template.svg)
