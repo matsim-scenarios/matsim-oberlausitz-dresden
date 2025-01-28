@@ -1,16 +1,24 @@
 
 N := oberlausitz-dresden
-V := v1.0
+V := v2025.1
 CRS := EPSG:25832
+
+ifndef SUMO_HOME
+	export SUMO_HOME := $(abspath ../../Sumo/)
+endif
+
+#define some important paths
+# osmosis and sumo paths need to be in " because of blank space in path...
+osmosis := "$(CURDIR)/../../../../../Program Files/osmosis-0.49.2//bin/osmosis.bat"
+germany := $(CURDIR)/../../shared-svn/projects/matsim-germany
+shared := $(CURDIR)/../../shared-svn/projects/matsim-oberlausitz-dresden
+oberlausitz-dresden := $(CURDIR)/../../public-svn/matsim/scenarios/countries/de/oberlausitz-dresden/oberlausitz-dresden-$V/input/
 
 MEMORY ?= 20G
 JAR := matsim-$(N)-*.jar
+NETWORK := $(germany)/maps/germany-250127.osm.pbf
 
-ifndef SUMO_HOME
-	export SUMO_HOME := $(abspath ../../sumo-1.15.0/)
-endif
 
-osmosis := osmosis/bin/osmosis
 
 # Scenario creation tool
 sc := java -Xmx$(MEMORY) -jar $(JAR)
@@ -18,41 +26,48 @@ sc := java -Xmx$(MEMORY) -jar $(JAR)
 .PHONY: prepare
 
 $(JAR):
-	mvn package
+	mvn package -DskipTests
 
 # Required files
-input/network.osm.pbf:
-	curl https://download.geofabrik.de/europe/germany-210701.osm.pbf\
-	  -o input/network.osm.pbf
+#this step is only necessary once. The downloaded network is uploaded to shared-svn/projects/matsim-germany/maps
+#input/network.osm.pbf:
+#	curl https://download.geofabrik.de/europe/germany-250127.osm.pbf\
+#	  -o ../../shared-svn/projects/matsim-germany/maps/germany-250127.osm.pbf
 
-input/network.osm: input/network.osm.pbf
-
-	# FIXME: Adjust level of details and area
-
+#retrieve detailed network (see param highway) from OSM
+input/network-detailed.osm.pbf: $(NETWORK)
 	$(osmosis) --rb file=$<\
 	 --tf accept-ways bicycle=yes highway=motorway,motorway_link,trunk,trunk_link,primary,primary_link,secondary_link,secondary,tertiary,motorway_junction,residential,unclassified,living_street\
-	 --bounding-polygon file="../shared-svn/projects/$N/data/area.poly"\
-	 --used-node --wb input/network-detailed.osm.pbf
+	 --bounding-polygon file="$(shared)/data/dresden.poly"\
+	 --used-node --wb $@
 
+# 	This includes residential as well, since multiple cities are covered by the study area
+#	retrieve coarse network (see param highway) from OSM
+input/network-coarse.osm.pbf: $(NETWORK)
 	$(osmosis) --rb file=$<\
-	 --tf accept-ways highway=motorway,motorway_link,trunk,trunk_link,primary,primary_link,secondary_link,secondary,tertiary,motorway_junction\
-	 --bounding-box top=51.92 left=11.45 bottom=50.83 right=13.36\
-	 --used-node --wb input/network-coarse.osm.pbf
+	 --tf accept-ways highway=motorway,motorway_link,trunk,trunk_link,primary,primary_link,secondary_link,secondary,tertiary,motorway_junction,residential\
+	 --bounding-polygon file="$(shared)/data/oberlausitz.poly"\
+	 --used-node --wb $@
 
+  #	retrieve germany wide network (see param highway) from OSM
+input/network-germany.osm.pbf: $(NETWORK)
 	$(osmosis) --rb file=$<\
-	 --tf accept-ways highway=motorway,motorway_link,motorway_junction,trunk,trunk_link,primary,primary_link\
-	 --used-node --wb input/network-germany.osm.pbf
+ 	 --tf accept-ways highway=motorway,motorway_link,motorway_junction,trunk,trunk_link,primary,primary_link\
+ 	 --used-node --wb $@
 
-	$(osmosis) --rb file=input/network-germany.osm.pbf --rb file=input/network-coarse.osm.pbf --rb file=input/network-detailed.osm.pbf\
+input/network.osm: input/network-germany.osm.pbf input/network-coarse.osm.pbf input/network-detailed.osm.pbf
+	$(osmosis) --rb file=$< --rb file=$(word 2,$^) --rb file=$(word 3,$^)\
   	 --merge --merge\
   	 --tag-transform file=input/remove-railway.xml\
   	 --wx $@
 
-	rm input/network-detailed.osm.pbf
-	rm input/network-coarse.osm.pbf
-	rm input/network-germany.osm.pbf
+	rm ./input/network-detailed.osm.pbf
+	rm ./input/network-coarse.osm.pbf
+	rm ./input/network-germany.osm.pbf
 
 
+	#	roadTypes are taken either from the general file "osmNetconvert.typ.xml"
+	#	or from the german one "osmNetconvertUrbanDe.ty.xml"
 input/sumo.net.xml: input/network.osm
 
 	$(SUMO_HOME)/bin/netconvert --geometry.remove --ramps.guess --ramps.no-split\
@@ -66,7 +81,7 @@ input/sumo.net.xml: input/network.osm
 	 --proj "+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"\
 	 --osm-files $< -o=$@
 
-
+#TODO: continue here
 input/$V/$N-$V-network.xml.gz: input/sumo.net.xml
 	$(sc) prepare network-from-sumo $<\
 	 --output $@

@@ -39,9 +39,9 @@
 
 	<module name="transit">
 		<param name="transitScheduleFile"
-		       value="[name]-v1.0-transitSchedule.xml.gz"/>
+		       value="[name]-v2025.1-transitSchedule.xml.gz"/>
 		<param name="vehiclesFile"
-		       value="[name]-v1.0-transitVehicles.xml.gz"/>
+		       value="[name]-v2025.1-transitVehicles.xml.gz"/>
 		<param name="useTransit" value="true"/>
 	</module>
 
