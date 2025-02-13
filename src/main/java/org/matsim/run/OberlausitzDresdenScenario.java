@@ -12,6 +12,7 @@ import org.matsim.application.prepare.network.CreateNetworkFromSumo;
 import org.matsim.application.prepare.population.*;
 import org.matsim.application.prepare.pt.CreateTransitScheduleFromGtfs;
 import org.matsim.core.config.Config;
+import org.matsim.core.config.groups.PlansConfigGroup;
 import org.matsim.core.config.groups.RoutingConfigGroup;
 import org.matsim.core.config.groups.ScoringConfigGroup;
 import org.matsim.core.config.groups.VspExperimentalConfigGroup;
@@ -89,6 +90,7 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 
 		config.controller().setOutputDirectory(sample.adjustName(config.controller().getOutputDirectory()));
 		config.plans().setInputFile(sample.adjustName(config.plans().getInputFile()));
+		config.plans().setActivityDurationInterpretation(PlansConfigGroup.ActivityDurationInterpretation.tryEndTimeThenDuration);
 		config.controller().setRunId(sample.adjustName(config.controller().getRunId()));
 
 		config.qsim().setFlowCapFactor(sample.getSize() / 100.0);
