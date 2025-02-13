@@ -15,7 +15,8 @@ shared := $(CURDIR)/../../shared-svn/projects/matsim-oberlausitz-dresden
 oberlausitz-dresden := $(CURDIR)/../../public-svn/matsim/scenarios/countries/de/oberlausitz-dresden/oberlausitz-dresden-$V/input/
 
 MEMORY ?= 20G
-JAR := matsim-$(N)-*.jar
+#JAR := matsim-$(N)-*.jar
+JAR := matsim-oberlausitz-dresden-2025.0-d5c2d11-dirty.jar
 NETWORK := $(germany)/maps/germany-250127.osm.pbf
 
 
@@ -86,30 +87,26 @@ input/sumo.net.xml: input/network.osm
 input/v2025.0/oberlausitz-dresden-v2025.0-network.xml.gz: input/sumo.net.xml
 	echo input/$V/$N-$V-network.xml.gz
 	$(sc) prepare network-from-sumo $< --output $@ --free-speed-factor 0.75
-	#$(sc) prepare clean-network $@ --output $@ --modes car --modes bike
-
-	# FIXME: Adjust
-
+	$(sc) prepare clean-network $@ --output $@ --modes car --modes bike --modes ride
+#	delete truck as allowed mode (not used), add longDistanceFreight as allowed mode, prepare network for emissions analysis
 	$(sc) prepare network\
-     --shp ../public-svn/matsim/scenarios/countries/de/$N/shp/prepare-network/av-and-drt-area.shp\
 	 --network $@\
 	 --output $@
 
 
-input/$V/$N-$V-network-with-pt.xml.gz: input/$V/$N-$V-network.xml.gz
-	# FIXME: Adjust GTFS
-
+input/v2025.0/oberlausitz-dresden-v2025.0-network-with-pt.xml.gz: input/$V/$N-$V-network.xml.gz
 	$(sc) prepare transit-from-gtfs --network $<\
 	 --output=input/$V\
-	 --name $N-$V --date "2021-08-18" --target-crs $(CRS) \
-	 ../shared-svn/projects/$N/data/20210816_regio.zip\
-	 ../shared-svn/projects/$N/data/20210816_train_short.zip\
-	 ../shared-svn/projects/$N/data/20210816_train_long.zip\
+	 --name $N-$V --date "2025-02-09" --target-crs $(CRS) \
+	 $(shared)/data/gtfs/20250209_regio.zip\
+	 $(shared)/data/gtfs/20250209_train_short.zip\
+	 $(shared)/data/gtfs/20250209_train_long.zip\
 	 --prefix regio_,short_,long_\
-	 --shp ../shared-svn/projects/$N/data/pt-area/pt-area.shp\
-	 --shp ../shared-svn/projects/$N/data/Bayern.zip\
-	 --shp ../shared-svn/projects/$N/data/germany-area/germany-area.shp\
+	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp\
+	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp\
+	 --shp $(shared)/data/germany-area/germany-area.shp\
 
+#TODO: continue here
 input/freight-trips.xml.gz: input/$V/$N-$V-network.xml.gz
 	# FIXME: Adjust path
 
