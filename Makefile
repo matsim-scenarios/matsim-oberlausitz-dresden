@@ -1,6 +1,6 @@
 
 N := oberlausitz-dresden
-V := v2025.1
+V := v2025.0
 CRS := EPSG:25832
 
 ifndef SUMO_HOME
@@ -81,10 +81,12 @@ input/sumo.net.xml: input/network.osm
 	 --proj "+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"\
 	 --osm-files $< -o=$@
 
-#TODO: continue here
-input/$V/$N-$V-network.xml.gz: input/sumo.net.xml
-	$(sc) prepare network-from-sumo $<\
-	 --output $@
+# transform sumo network to matsim network and clean it afterwards
+# free-speed-factor 0.75 (standard is 0.9): see VSP WP 24-08. oberlausitz + dresden is mix between rural and city (~0.7 - 0.8)
+input/v2025.0/oberlausitz-dresden-v2025.0-network.xml.gz: input/sumo.net.xml
+	echo input/$V/$N-$V-network.xml.gz
+	$(sc) prepare network-from-sumo $< --output $@ --free-speed-factor 0.75
+	#$(sc) prepare clean-network $@ --output $@ --modes car --modes bike
 
 	# FIXME: Adjust
 

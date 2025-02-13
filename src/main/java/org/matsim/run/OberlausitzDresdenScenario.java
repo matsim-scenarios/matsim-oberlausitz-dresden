@@ -32,10 +32,10 @@ import java.util.List;
 @MATSimApplication.Analysis({
 		LinkStats.class, CheckPopulation.class
 })
-// FIXME: Rename scenario
+// yy: Rename scenario
 public class OberlausitzDresdenScenario extends MATSimApplication {
 
-	static final String VERSION = "1.0";
+	static final String VERSION = "v2025.0";
 
 	@CommandLine.Mixin
 	private final SampleOptions sample = new SampleOptions(25, 10, 1);
@@ -45,7 +45,7 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 		super(config);
 	}
 
-	// FIXME: update config path
+	// yy: update config path
 	public OberlausitzDresdenScenario() {
 		super(String.format("input/v%s/template-v%s-25pct.config.xml", VERSION, VERSION));
 	}
@@ -97,7 +97,7 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 		config.vspExperimental().setVspDefaultsCheckingLevel(VspExperimentalConfigGroup.VspDefaultsCheckingLevel.abort);
 		config.routing().setAccessEgressType(RoutingConfigGroup.AccessEgressType.accessEgressModeToLink);
 
-		// TODO: Config options
+//		 yy: Config options
 
 		return config;
 	}
