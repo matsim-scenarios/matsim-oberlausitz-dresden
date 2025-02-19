@@ -14,15 +14,15 @@ germany := $(CURDIR)/../../shared-svn/projects/matsim-germany
 shared := $(CURDIR)/../../shared-svn/projects/matsim-oberlausitz-dresden
 oberlausitz-dresden := $(CURDIR)/../../public-svn/matsim/scenarios/countries/de/oberlausitz-dresden/oberlausitz-dresden-$V/input/
 
-MEMORY ?= 20G
+MEMORY ?= 30G
 #JAR := matsim-$(N)-*.jar
-JAR := matsim-oberlausitz-dresden-2025.0-d5c2d11-dirty.jar
+JAR := matsim-oberlausitz-dresden-2025.0-bdff902-dirty.jar
 NETWORK := $(germany)/maps/germany-250127.osm.pbf
 
 
 
 # Scenario creation tool
-sc := java -Xmx$(MEMORY) -jar $(JAR)
+sc := java -Xms$(MEMORY) -Xmx$(MEMORY) -jar $(JAR)
 
 .PHONY: prepare
 
@@ -106,65 +106,93 @@ input/v2025.0/oberlausitz-dresden-v2025.0-network-with-pt.xml.gz: input/$V/$N-$V
 	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp\
 	 --shp $(shared)/data/germany-area/germany-area.shp\
 
-#TODO: continue here
-input/freight-trips.xml.gz: input/$V/$N-$V-network.xml.gz
-	# FIXME: Adjust path
-
-	$(sc) extract-freight-trips ../shared-svn/projects/german-wide-freight/v1.2/german-wide-freight-25pct.xml.gz\
-	 --network ../shared-svn/projects/german-wide-freight/original-data/german-primary-road.network.xml.gz\
-	 --input-crs EPSG:5677\
+# extract oberlausitz-dresden long haul freight traffic trips from german wide file
+input/plans-longHaulFreight.xml.gz: input/$V/$N-$V-network.xml.gz
+	$(sc) prepare extract-freight-trips ../../public-svn/matsim/scenarios/countries/de/german-wide-freight/v2/german_freight.100pct.plans.xml.gz\
+	 --network ../../public-svn/matsim/scenarios/countries/de/german-wide-freight/v2/germany-europe-network.xml.gz\
+	 --input-crs $(CRS)\
 	 --target-crs $(CRS)\
-	 --shp ../shared-svn/projects/$N/data/shp/$N.shp --shp-crs $(CRS)\
+	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)\
+	 --cut-on-boundary\
+	 --LegMode "longDistanceFreight"\
 	 --output $@
 
-input/$V/prepare-100pct.plans.xml.gz:
+# trajectory-to-plans formerly was a collection of methods to prepare a given population
+# now, most of the functions of this class do have their own class (downsample, splitduration types...)
+# it basically only transforms the old attribute format to the new one
+# --max-typical-duration set to 0 because this switches off the duration split, which we do later
+input/v2025.0/prepare-100pct.plans.xml.gz:
 	$(sc) prepare trajectory-to-plans\
 	 --name prepare --sample-size 1 --output input/$V\
-	 --population ../shared-svn/projects/matsim-$N/data/snz/20241129_Teilmodell_Hoyerswerda/Teilmodell/populationATA.xml.gz\
-	 --attributes  ../shared-svn/projects/matsim-$N/data/snz/20241129_Teilmodell_Hoyerswerda/Teilmodell/personAttributesATA.xml.gz
+	 --max-typical-duration 0\
+	 --population $(shared)/data/snz/senozon/20250123_Teilmodell_Hoyerswerda/Modell/population.xml.gz\
+	 --attributes  $(shared)/data/snz/senozon/20250123_Teilmodell_Hoyerswerda/Modell/personAttributes.xml.gz
 
-#	$(sc) prepare resolve-grid-coords\
-#	 input/$V/prepare-25pct.plans.xml.gz\
-#	 --input-crs $(CRS)\
-#	 --grid-resolution 300\
-#	 --landuse ../matsim-leipzig/scenarios/input/landuse/landuse.shp\
-#	 --output $@
+	# resolve senozon aggregated grid coords (activities): distribute them based on landuse.shp
+	$(sc) prepare resolve-grid-coords\
+	 input/$V/prepare-100pct.plans.xml.gz\
+	 --input-crs $(CRS)\
+	 --grid-resolution 300\
+	 --landuse $(germany)/landuse/landuse.shp\
+	 --output $@
 
-input/$V/$N-$V-100pct.plans-initial.xml.gz: input/$V/prepare-100pct.plans.xml.gz
+ input/v2025.0/oberlausitz-dresden-v2025.0-100pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.gz input/$V/prepare-100pct.plans.xml.gz
+# generate some short distance trips, which in senozon data generally are missing
+# trip range 700m because:
+# when adding 1km trips (default value), too many trips of bin 1km-2km were also added.
+#the range value is beeline, so the trip distance (routed) often is higher than 1km
+#TODO: here, we need to differ between dresden and oberlausitz-dresden population for different calibs. One is based on Srv, the other on MiD.
+	$(sc) prepare generate-short-distance-trips\
+  	 --population input/$V/prepare-100pct.plans.xml.gz\
+  	 --input-crs $(CRS)\
+ 	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)\
+ 	 --range 700\
+# 	 TODO: adapt number of trips
+  	 --num-trips 324430
 
-	# Use direct input for now
-	cp $< $@
+#	adapt coords of activities in the wider network such that they are closer to a link
+# 	such that agents do not have to walk as far as before
+	$(sc) prepare adjust-activity-to-link-distances input/$V/prepare-100pct.plans-with-trips.xml.gz\
+	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)\
+     --scale 1.15\
+     --input-crs $(CRS)\
+     --network input/$V/$N-$V-network.xml.gz\
+     --output input/$V/prepare-100pct.plans-adj.xml.gz
 
-#	$(sc) prepare generate-short-distance-trips\
-# 	 --population input/$V/prepare-25pct.plans.xml.gz\
-# 	 --input-crs $(CRS)\
-#	 --shp ../shared-svn/projects/$N/data/shp/$N.shp --shp-crs $(CRS)\
-# 	 --num-trips 111111 # FIXME
+#	change modes in subtours with chain based AND non-chain based by choosing mode for subtour randomly
+	$(sc) prepare fix-subtour-modes --coord-dist 100 --input input/$V/prepare-100pct.plans-adj.xml.gz --output $@
 
-#	$(sc) prepare adjust-activity-to-link-distances input/$V/prepare-25pct.plans-with-trips.xml.gz\
-#	 --shp ../shared-svn/projects/$N/data/shp/$N.shp --shp-crs $(CRS)\
-#     --scale 1.15\
-#     --input-crs $(CRS)\
-#     --network input/$V/$N-$V-network.xml.gz\
-#     --output input/$V/prepare-25pct.plans-adj.xml.gz
+#	set car availability for agents below 18 to false, standardize some person attrs, set home coords, set person income
+	$(sc) prepare population $@ --output $@
 
-#	$(sc) prepare xy-to-links --network input/$V/$N-$V-network.xml.gz --input input/$V/prepare-25pct.plans-adj.xml.gz --output $@
+#	split activity types to type_duration for the scoring to take into account the typical duration
+	$(sc) prepare split-activity-types-duration\
+		--input $@\
+		--exclude commercial_start,commercial_end,freight_start,freight_end,service\
+		--output $@
 
-#	$(sc) prepare fix-subtour-modes --input $@ --output $@
+#	merge person and freight pops
+	$(sc) prepare merge-populations $@ $< --output $@
 
-#	$(sc) prepare merge-populations $@ $< --output $@
+	$(sc) prepare downsample-population $@\
+    	 --sample-size 1\
+    	 --samples 0.25 0.1 0.01\
 
-#	$(sc) prepare extract-home-coordinates $@ --csv input/$V/$N-$V-homes.csv
-
-#	$(sc) prepare downsample-population $@\
-#    	 --sample-size 0.25\
-#    	 --samples 0.1 0.01\
-
+# create matsim counts file
+input/v2025.0/oberlausitz-dresden-v2025.0-counts-bast.xml.gz: input/$V/$N-$V-network-with-pt.xml.gz
+	$(sc) prepare counts-from-bast\
+		--network $<\
+		--motorway-data $(germany)/bast-counts/2019/2019_A_S.zip\
+		--primary-data $(germany)/bast-counts/2019/2019_B_S.zip\
+		--station-data $(germany)/bast-counts/2019/Jawe2019.csv\
+		--year 2019\
+		--shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)\
+		--output $@
 
 check: input/$V/$N-$V-100pct.plans-initial.xml.gz
 	$(sc) analysis check-population $<\
  	 --input-crs $(CRS)\
-	 --shp ../shared-svn/projects/matsim-$N/data/snz/20241129_Teilmodell_Hoyerswerda/Teilmodell/UG.shp/UG.shp --shp-crs $(CRS)
+	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)
 
 # Aggregated target
 prepare: input/$V/$N-$V-100pct.plans-initial.xml.gz input/$V/$N-$V-network-with-pt.xml.gz

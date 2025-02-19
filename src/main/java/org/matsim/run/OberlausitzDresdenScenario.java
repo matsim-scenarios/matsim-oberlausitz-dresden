@@ -7,6 +7,7 @@ import org.matsim.application.analysis.CheckPopulation;
 import org.matsim.application.analysis.traffic.LinkStats;
 import org.matsim.application.options.SampleOptions;
 import org.matsim.application.prepare.CreateLandUseShp;
+import org.matsim.application.prepare.counts.CreateCountsFromBAStData;
 import org.matsim.application.prepare.freight.tripExtraction.ExtractRelevantFreightTrips;
 import org.matsim.application.prepare.network.CleanNetwork;
 import org.matsim.application.prepare.network.CreateNetworkFromSumo;
@@ -20,6 +21,7 @@ import org.matsim.core.config.groups.VspExperimentalConfigGroup;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.prepare.PrepareNetwork;
+import org.matsim.prepare.PreparePopulation;
 import org.matsim.simwrapper.SimWrapperModule;
 import picocli.CommandLine;
 
@@ -31,7 +33,7 @@ import java.util.List;
 		CreateNetworkFromSumo.class, CreateTransitScheduleFromGtfs.class, TrajectoryToPlans.class, GenerateShortDistanceTrips.class,
 		MergePopulations.class, ExtractRelevantFreightTrips.class, DownSamplePopulation.class, ExtractHomeCoordinates.class,
 		CreateLandUseShp.class, ResolveGridCoordinates.class, FixSubtourModes.class, AdjustActivityToLinkDistances.class, XYToLinks.class,
-		CleanNetwork.class, PrepareNetwork.class
+		CleanNetwork.class, PrepareNetwork.class, SplitActivityTypesDuration.class, PreparePopulation.class, CreateCountsFromBAStData.class
 })
 @MATSimApplication.Analysis({
 		LinkStats.class, CheckPopulation.class

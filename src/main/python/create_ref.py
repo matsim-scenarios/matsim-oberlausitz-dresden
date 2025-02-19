@@ -13,6 +13,7 @@ CRS = "EPSG:25832"
 def person_filter(df):
     """ Filter person that are relevant for the calibration."""
 
+    df = df.dropna(subset=["geom"])
     df = gpd.GeoDataFrame(df, geometry=gpd.GeoSeries.from_wkt(df.geom, crs="EPSG:4326").to_crs(CRS))
     df = gpd.sjoin(df, region, how="inner", predicate="intersects")
 
@@ -31,13 +32,13 @@ def trip_filter(df):
 if __name__ == "__main__":
 
     # Defines the study area
-    region = gpd.read_file("../../../../shared-svn/projects/matsim-oberlausitz-dresden/data/snz/20241129_Teilmodell_Hoyerswerda/Teilmodell/UG.shp").to_crs(CRS)
+    region = gpd.read_file("../../../../../shared-svn/projects/matsim-oberlausitz-dresden/data/oberlausitz-area/oberlausitz.shp").to_crs(CRS)
 
     # This contains the path to the MiD 2017 data with the highest resolution
     # See https://daten.clearingstelle-verkehr.de/279/ for more information, the data is not included in this repository
     r = run_create_ref_data.create(
         # this is the MID2017 dataset, it is not available in svn as it has to be encrypted
-        "/Volumes/Untitled/B3_Lokal-Datensatzpaket/CSV",
+        "A:/B3_Lokal-Datensatzpaket/CSV",
         person_filter, trip_filter,
         run_create_ref_data.InvalidHandling.REMOVE_TRIPS,
         ref_groups=["age", "economic_status"]
@@ -49,3 +50,23 @@ if __name__ == "__main__":
     print(r.share)
 
     print(r.trips.groupby("dist_group").agg(n=("main_mode", "count")) / len(r.trips))
+
+    # Calculate the number of short distance trips that are missing in the simulated data
+    # This function required that one run with 0 iterations has been performed beforehand
+
+    # TODO: 100pct einmal laufen lassen mit 0 iterationen um datei zu generieren
+    sim_persons = pd.read_csv("../../../output/output-lausitz-100pct/lausitz-100pct.output_persons.csv.gz",
+                              delimiter=";", dtype={"person": "str"})
+    sim_persons = sim_persons[sim_persons.subpopulation == "person"]
+    sim_persons = gpd.GeoDataFrame(sim_persons,
+                                   geometry=gpd.points_from_xy(sim_persons.home_x, sim_persons.home_y)).set_crs(CRS)
+
+    sim_persons = gpd.sjoin(sim_persons, region, how="inner", predicate="intersects")
+
+    sim = pd.read_csv("../../../output/output-lausitz-100pct/lausitz-100pct.output_trips.csv.gz",
+                      delimiter=";", dtype={"person": "str"})
+
+    sim = pd.merge(sim, sim_persons, how="inner", left_on="person", right_on="person", validate="many_to_one")
+
+    share, add_trips = calc_needed_short_distance_trips(r.trips, sim, max_dist=700)
+    print("Short distance trip missing: ", add_trips)
