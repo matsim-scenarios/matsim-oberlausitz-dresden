@@ -8,8 +8,8 @@
 	<module name="controler">
 		<param name="lastIteration" value="700"/>
 		<param name="overwriteFiles" value="failIfDirectoryExists"/>
-		<param name="runId" value="[name]-25pct"/>
-		<param name="outputDirectory" value="./output/output-[name]-25pct"/>
+		<param name="runId" value="oberlausitz-dresden-10pct"/>
+		<param name="outputDirectory" value="./output/output-oberlausitz-dresden-10pct"/>
 		<param name="writeEventsInterval" value="100"/>
 		<param name="writePlansInterval" value="100"/>
 		<param name="enableLinkToLinkRouting" value="false"/>
@@ -23,32 +23,32 @@
 	</module>
 
 	<module name="network">
-		<param name="inputNetworkFile" value="[name]-network-with-pt.xml.gz"/>
+		<param name="inputNetworkFile" value="oberlausitz-dresden-v2025.0-network-with-pt.xml.gz"/>
 		<param name="laneDefinitionsFile" value="null"/>
 	</module>
 
 	<module name="plans">
 		<param name="inputPlansFile"
-		       value="[name]-25pct.plans.xml.gz"/>
+		       value="oberlausitz-dresden-v2025.0-100pct.plans-initial.xml.gz"/>
 		<param name="removingUnnecessaryPlanAttributes" value="true"/>
 	</module>
 
 	<module name="vehicles">
-		<param name="vehiclesFile" value="vehicle-types.xml"/>
+		<param name="vehiclesFile" value="oberlausitz-dresden-v2025.0-vehicle-types.xml"/>
 	</module>
 
 	<module name="transit">
 		<param name="transitScheduleFile"
-		       value="[name]-v2025.0-transitSchedule.xml.gz"/>
+		       value="oberlausitz-dresden-v2025.0-transitSchedule.xml.gz"/>
 		<param name="vehiclesFile"
-		       value="[name]-v2025.0-transitVehicles.xml.gz"/>
+		       value="oberlausitz-dresden-v2025.0-transitVehicles.xml.gz"/>
 		<param name="useTransit" value="true"/>
 	</module>
 
-	<module name="planscalcroute">
+	<module name="routing">
 		<!-- Some typical teleportation routing params are set by default, such as for walk and bike.  Setting this switch to "true" will clear them.  Note that this will also clear settings for helper modes such as for non_network_walk -->
 		<param name="clearDefaultTeleportedModeParams" value="true"/>
-		<param name="networkModes" value="car,ride,bike,freight"/>
+		<param name="networkModes" value="car,ride,bike,longDistanceFreight"/>
 		<parameterset type="teleportedModeParameters">
 			<param name="beelineDistanceFactor" value="1.3"/>
 			<param name="mode" value="walk"/>
@@ -58,9 +58,9 @@
 
 	<module name="qsim">
 		<param name="endTime" value="36:00:00"/>
-		<param name="flowCapacityFactor" value="0.25"/>
-		<param name="storageCapacityFactor" value="0.25"/>
-		<param name="mainMode" value="car,freight"/>
+		<param name="flowCapacityFactor" value="0.1"/>
+		<param name="storageCapacityFactor" value="0.1"/>
+		<param name="mainMode" value="car,longDistanceFreight,bike"/>
 		<param name="numberOfThreads" value="16"/>
 		<param name="startTime" value="00:00:00"/>
 		<param name="stuckTime" value="30.0"/>
@@ -102,12 +102,12 @@
 
 		<parameterset type="strategysettings">
 			<param name="strategyName" value="ChangeExpBeta"/>
-			<param name="subpopulation" value="freight"/>
+			<param name="subpopulation" value="longDistanceFreight"/>
 			<param name="weight" value="0.95"/>
 		</parameterset>
 		<parameterset type="strategysettings">
 			<param name="strategyName" value="ReRoute"/>
-			<param name="subpopulation" value="freight"/>
+			<param name="subpopulation" value="longDistanceFreight"/>
 			<param name="weight" value="0.05"/>
 		</parameterset>
 	</module>
@@ -123,7 +123,7 @@
 
 	<module name="changeMode">
 		<param name="modes" value="car,ride,pt,bike,walk"/>
-		<param name="ignoreCarAvailability" value="false"/>
+		<param name="ignoreCarAvailability" value="true"/>
 	</module>
 
 	<module name="transitRouter">
@@ -131,7 +131,7 @@
 	</module>
 
 	<module name="travelTimeCalculator">
-		<param name="analyzedModes" value="car,freight"/>
+		<param name="analyzedModes" value="car,longDistanceFreight"/>
 
 		<param name="separateModes" value="true"/>
 
@@ -144,7 +144,7 @@
 		<param name="vspDefaultsCheckingLevel" value="abort"/>
 	</module>
 
-	<module name="planCalcScore">
+	<module name="scoring">
 		<param name="fractionOfIterationsToStartScoreMSA" value="0.9"/>
 		<parameterset type="scoringParameters">
 
@@ -180,7 +180,7 @@
 
 			<parameterset type="modeParams">
 				<param name="marginalUtilityOfTraveling_util_hr" value="-10.0"/>
-				<param name="mode" value="freight"/>
+				<param name="mode" value="longDistanceFreight"/>
 				<param name="monetaryDistanceRate" value="-0.002"/>
 			</parameterset>
 

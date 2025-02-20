@@ -9,7 +9,6 @@
 		<!-- <version>15.0</version> -->
 
 		<!-- PR-labelled release -->
-		<!-- FIXME: Decide on version -->
 		<version>2025.0-PR3725</version>
 
 		<!-- snapshot == not recommended: rather use PR-labelled release!-->
@@ -40,8 +39,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub Packages</name>
-			<!-- FIXME: Update Repo -->
-			<url>https://maven.pkg.github.com/matsim-scenarios/matsim-template-scenario</url>
+			<url>https://maven.pkg.github.com/matsim-scenarios/matsim-oberlausitz-dresden</url>
 		</repository>
 	</distributionManagement>
 
@@ -61,6 +59,11 @@
 		<dependency>
 			<groupId>org.matsim.contrib</groupId>
 			<artifactId>simwrapper</artifactId>
+			<version>${matsim.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.matsim.contrib</groupId>
+			<artifactId>vsp</artifactId>
 			<version>${matsim.version}</version>
 		</dependency>
 

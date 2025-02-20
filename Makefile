@@ -16,7 +16,7 @@ oberlausitz-dresden := $(CURDIR)/../../public-svn/matsim/scenarios/countries/de/
 
 MEMORY ?= 30G
 #JAR := matsim-$(N)-*.jar
-JAR := matsim-oberlausitz-dresden-2025.0-bdff902-dirty.jar
+JAR := matsim-oberlausitz-dresden-2025.0-bf878e6-dirty.jar
 NETWORK := $(germany)/maps/germany-250127.osm.pbf
 
 
@@ -125,58 +125,53 @@ input/v2025.0/prepare-100pct.plans.xml.gz:
 	$(sc) prepare trajectory-to-plans\
 	 --name prepare --sample-size 1 --output input/$V\
 	 --max-typical-duration 0\
-	 --population $(shared)/data/snz/senozon/20250123_Teilmodell_Hoyerswerda/Modell/population.xml.gz\
-	 --attributes  $(shared)/data/snz/senozon/20250123_Teilmodell_Hoyerswerda/Modell/personAttributes.xml.gz
-
-	# resolve senozon aggregated grid coords (activities): distribute them based on landuse.shp
-	$(sc) prepare resolve-grid-coords\
-	 input/$V/prepare-100pct.plans.xml.gz\
+	 --population $(shared)/data/snz/20250123_Teilmodell_Hoyerswerda/Modell/population.xml.gz\
+	 --attributes $(shared)/data/snz/20250130_Teilmodell_Hoyerswerda/Modell/personAttributes.xml.gz
+	# TODO: repeat this step and search for error message of ResolveGridCoordinates class line 116, if the error is logged, try again with --network option of car network only
+# resolve senozon aggregated grid coords (activities): distribute them based on landuse.shp
+	$(sc) prepare resolve-grid-coords $@\
 	 --input-crs $(CRS)\
 	 --grid-resolution 300\
 	 --landuse $(germany)/landuse/landuse.shp\
 	 --output $@
 
- input/v2025.0/oberlausitz-dresden-v2025.0-100pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.gz input/$V/prepare-100pct.plans.xml.gz
-# generate some short distance trips, which in senozon data generally are missing
-# trip range 700m because:
-# when adding 1km trips (default value), too many trips of bin 1km-2km were also added.
-#the range value is beeline, so the trip distance (routed) often is higher than 1km
-#TODO: here, we need to differ between dresden and oberlausitz-dresden population for different calibs. One is based on Srv, the other on MiD.
-	$(sc) prepare generate-short-distance-trips\
-  	 --population input/$V/prepare-100pct.plans.xml.gz\
-  	 --input-crs $(CRS)\
- 	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)\
- 	 --range 700\
-# 	 TODO: adapt number of trips
-  	 --num-trips 324430
 
+ # generate some short distance trips, which in senozon data generally are missing
+ # trip range 700m because:
+ # when adding 1km trips (default value), too many trips of bin 1km-2km were also added.
+ #the range value is beeline, so the trip distance (routed) often is higher than 1km
+ #TODO: here, we need to differ between dresden and oberlausitz-dresden population for different calibs. One is based on Srv, the other on MiD.
+ 	#$(sc) prepare generate-short-distance-trips\
+ #  	 --population input/$V/prepare-100pct.plans.xml.gz\
+ #  	 --input-crs $(CRS)\
+ # 	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)\
+ # 	 --range 700\
+ ## 	 TODO: adapt number of trips
+ #  	 --num-trips 324430
+
+ input/v2025.0/oberlausitz-dresden-v2025.0-100pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.gz input/$V/prepare-100pct.plans.xml.gz
 #	adapt coords of activities in the wider network such that they are closer to a link
 # 	such that agents do not have to walk as far as before
-	$(sc) prepare adjust-activity-to-link-distances input/$V/prepare-100pct.plans-with-trips.xml.gz\
+	$(sc) prepare adjust-activity-to-link-distances input/$V/prepare-100pct.plans.xml.gz\
 	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)\
      --scale 1.15\
      --input-crs $(CRS)\
      --network input/$V/$N-$V-network.xml.gz\
      --output input/$V/prepare-100pct.plans-adj.xml.gz
-
 #	change modes in subtours with chain based AND non-chain based by choosing mode for subtour randomly
 	$(sc) prepare fix-subtour-modes --coord-dist 100 --input input/$V/prepare-100pct.plans-adj.xml.gz --output $@
-
 #	set car availability for agents below 18 to false, standardize some person attrs, set home coords, set person income
 	$(sc) prepare population $@ --output $@
-
 #	split activity types to type_duration for the scoring to take into account the typical duration
 	$(sc) prepare split-activity-types-duration\
 		--input $@\
 		--exclude commercial_start,commercial_end,freight_start,freight_end,service\
 		--output $@
-
 #	merge person and freight pops
-	$(sc) prepare merge-populations $@ $< --output $@
-
-	$(sc) prepare downsample-population $@\
-    	 --sample-size 1\
-    	 --samples 0.25 0.1 0.01\
+	#$(sc) prepare merge-populations $@ $< --output $@
+	#$(sc) prepare downsample-population $@\
+#    	 --sample-size 1\
+#    	 --samples 0.25 0.1 0.01\
 
 # create matsim counts file
 input/v2025.0/oberlausitz-dresden-v2025.0-counts-bast.xml.gz: input/$V/$N-$V-network-with-pt.xml.gz
