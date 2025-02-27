@@ -12,14 +12,13 @@ endif
 osmosis := "$(CURDIR)/../../../../../Program Files/osmosis-0.49.2//bin/osmosis.bat"
 germany := $(CURDIR)/../../shared-svn/projects/matsim-germany
 shared := $(CURDIR)/../../shared-svn/projects/matsim-oberlausitz-dresden
+sharedLausitz := $(CURDIR)/../../shared-svn/projects/DiTriMo
 oberlausitz-dresden := $(CURDIR)/../../public-svn/matsim/scenarios/countries/de/oberlausitz-dresden/oberlausitz-dresden-$V/input/
 
 MEMORY ?= 30G
 #JAR := matsim-$(N)-*.jar
-JAR := matsim-oberlausitz-dresden-2025.0-bf878e6-dirty.jar
+JAR := matsim-oberlausitz-dresden-2025.0-4be9b7e-dirty.jar
 NETWORK := $(germany)/maps/germany-250127.osm.pbf
-
-
 
 # Scenario creation tool
 sc := java -Xms$(MEMORY) -Xmx$(MEMORY) -jar $(JAR)
@@ -61,7 +60,6 @@ input/network.osm: input/network-germany.osm.pbf input/network-coarse.osm.pbf in
   	 --merge --merge\
   	 --tag-transform file=input/remove-railway.xml\
   	 --wx $@
-
 	rm ./input/network-detailed.osm.pbf
 	rm ./input/network-coarse.osm.pbf
 	rm ./input/network-germany.osm.pbf
@@ -84,30 +82,32 @@ input/sumo.net.xml: input/network.osm
 
 # transform sumo network to matsim network and clean it afterwards
 # free-speed-factor 0.75 (standard is 0.9): see VSP WP 24-08. oberlausitz + dresden is mix between rural and city (~0.7 - 0.8)
+#--remove-turn-restrictions used instead of new TurnRestrictionCleaner,
+# the cleaner needs more testing, as it destroys the bike network e.g.
 input/v2025.0/oberlausitz-dresden-v2025.0-network.xml.gz: input/sumo.net.xml
 	echo input/$V/$N-$V-network.xml.gz
 	$(sc) prepare network-from-sumo $< --output $@ --free-speed-factor 0.75
-	$(sc) prepare clean-network $@ --output $@ --modes car --modes bike --modes ride
+	$(sc) prepare clean-network $@ --output $@ --modes car --modes bike --modes ride --remove-turn-restrictions
 #	delete truck as allowed mode (not used), add longDistanceFreight as allowed mode, prepare network for emissions analysis
 	$(sc) prepare network\
 	 --network $@\
 	 --output $@
 
-
+# gtfs data from 20230113 used because it has way more pt lines in lausitz area than more recent one in shared-svn/matsim-oberlausitz-dresden
 input/v2025.0/oberlausitz-dresden-v2025.0-network-with-pt.xml.gz: input/$V/$N-$V-network.xml.gz
 	$(sc) prepare transit-from-gtfs --network $<\
 	 --output=input/$V\
-	 --name $N-$V --date "2025-02-09" --target-crs $(CRS) \
-	 $(shared)/data/gtfs/20250209_regio.zip\
-	 $(shared)/data/gtfs/20250209_train_short.zip\
-	 $(shared)/data/gtfs/20250209_train_long.zip\
+	 --name $N-$V --date "2023-01-11" --target-crs $(CRS) \
+	 $(sharedLausitz)/data/gtfs/20230113_regio.zip\
+	 $(sharedLausitz)/data/gtfs/20230113_train_short.zip\
+	 $(sharedLausitz)/data/gtfs/20230113_train_long.zip\
 	 --prefix regio_,short_,long_\
 	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp\
 	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp\
 	 --shp $(shared)/data/germany-area/germany-area.shp\
 
 # extract oberlausitz-dresden long haul freight traffic trips from german wide file
-input/plans-longHaulFreight.xml.gz: input/$V/$N-$V-network.xml.gz
+input/plans-longHaulFreight.xml.gz:
 	$(sc) prepare extract-freight-trips ../../public-svn/matsim/scenarios/countries/de/german-wide-freight/v2/german_freight.100pct.plans.xml.gz\
 	 --network ../../public-svn/matsim/scenarios/countries/de/german-wide-freight/v2/germany-europe-network.xml.gz\
 	 --input-crs $(CRS)\
@@ -127,7 +127,6 @@ input/v2025.0/prepare-100pct.plans.xml.gz:
 	 --max-typical-duration 0\
 	 --population $(shared)/data/snz/20250123_Teilmodell_Hoyerswerda/Modell/population.xml.gz\
 	 --attributes $(shared)/data/snz/20250130_Teilmodell_Hoyerswerda/Modell/personAttributes.xml.gz
-	# TODO: repeat this step and search for error message of ResolveGridCoordinates class line 116, if the error is logged, try again with --network option of car network only
 # resolve senozon aggregated grid coords (activities): distribute them based on landuse.shp
 	$(sc) prepare resolve-grid-coords $@\
 	 --input-crs $(CRS)\
@@ -135,21 +134,19 @@ input/v2025.0/prepare-100pct.plans.xml.gz:
 	 --landuse $(germany)/landuse/landuse.shp\
 	 --output $@
 
-
- # generate some short distance trips, which in senozon data generally are missing
+ input/v2025.0/oberlausitz-dresden-v2025.0-100pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.gz input/$V/prepare-100pct.plans.xml.gz
+# generate some short distance trips, which in senozon data generally are missing
  # trip range 700m because:
  # when adding 1km trips (default value), too many trips of bin 1km-2km were also added.
  #the range value is beeline, so the trip distance (routed) often is higher than 1km
  #TODO: here, we need to differ between dresden and oberlausitz-dresden population for different calibs. One is based on Srv, the other on MiD.
- 	#$(sc) prepare generate-short-distance-trips\
- #  	 --population input/$V/prepare-100pct.plans.xml.gz\
- #  	 --input-crs $(CRS)\
- # 	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)\
- # 	 --range 700\
- ## 	 TODO: adapt number of trips
- #  	 --num-trips 324430
-
- input/v2025.0/oberlausitz-dresden-v2025.0-100pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.gz input/$V/prepare-100pct.plans.xml.gz
+# MiD: --num-trips 210199
+	$(sc) prepare generate-short-distance-trips\
+   	 --population $(word 2,$^)\
+   	 --input-crs $(CRS)\
+  	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)\
+  	 --range 700\
+    --num-trips 210199
 #	adapt coords of activities in the wider network such that they are closer to a link
 # 	such that agents do not have to walk as far as before
 	$(sc) prepare adjust-activity-to-link-distances input/$V/prepare-100pct.plans.xml.gz\
@@ -168,10 +165,12 @@ input/v2025.0/prepare-100pct.plans.xml.gz:
 		--exclude commercial_start,commercial_end,freight_start,freight_end,service\
 		--output $@
 #	merge person and freight pops
-	#$(sc) prepare merge-populations $@ $< --output $@
-	#$(sc) prepare downsample-population $@\
-#    	 --sample-size 1\
-#    	 --samples 0.25 0.1 0.01\
+	$(sc) prepare merge-populations $@ $< --output $@
+	$(sc) prepare downsample-population $@\
+    	 --sample-size 1\
+    	 --samples 0.25 0.1 0.01 0.001\
+
+#TODO: create facilities from plans and use as input
 
 # create matsim counts file
 input/v2025.0/oberlausitz-dresden-v2025.0-counts-bast.xml.gz: input/$V/$N-$V-network-with-pt.xml.gz
@@ -184,6 +183,7 @@ input/v2025.0/oberlausitz-dresden-v2025.0-counts-bast.xml.gz: input/$V/$N-$V-net
 		--shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)\
 		--output $@
 
+# output of check-population was compared to initial output in matsim-oberlausitz-dresden scenario documentation, they align -sm0225
 check: input/$V/$N-$V-100pct.plans-initial.xml.gz
 	$(sc) analysis check-population $<\
  	 --input-crs $(CRS)\

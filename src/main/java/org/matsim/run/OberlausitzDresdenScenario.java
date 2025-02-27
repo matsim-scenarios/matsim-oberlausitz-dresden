@@ -3,6 +3,7 @@ package org.matsim.run;
 import org.matsim.analysis.personMoney.PersonMoneyEventsAnalysisModule;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.application.MATSimApplication;
 import org.matsim.application.analysis.CheckPopulation;
 import org.matsim.application.analysis.traffic.LinkStats;
@@ -14,17 +15,20 @@ import org.matsim.application.prepare.network.CleanNetwork;
 import org.matsim.application.prepare.network.CreateNetworkFromSumo;
 import org.matsim.application.prepare.population.*;
 import org.matsim.application.prepare.pt.CreateTransitScheduleFromGtfs;
+import org.matsim.contrib.vsp.pt.fare.DistanceBasedPtFareParams;
+import org.matsim.contrib.vsp.pt.fare.FareZoneBasedPtFareParams;
+import org.matsim.contrib.vsp.pt.fare.PtFareConfigGroup;
 import org.matsim.contrib.vsp.pt.fare.PtFareModule;
 import org.matsim.contrib.vsp.scenario.SnzActivities;
 import org.matsim.contrib.vsp.scoring.RideScoringParamsFromCarParams;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.config.groups.PlansConfigGroup;
-import org.matsim.core.config.groups.RoutingConfigGroup;
-import org.matsim.core.config.groups.ScoringConfigGroup;
-import org.matsim.core.config.groups.VspExperimentalConfigGroup;
+import org.matsim.core.config.groups.*;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.network.NetworkUtils;
+import org.matsim.core.network.turnRestrictions.DisallowedNextLinks;
+import org.matsim.core.replanning.annealing.ReplanningAnnealerConfigGroup;
 import org.matsim.core.scoring.functions.ScoringParametersForPerson;
 import org.matsim.prepare.PrepareNetwork;
 import org.matsim.prepare.PreparePopulation;
@@ -34,7 +38,6 @@ import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 @CommandLine.Command(header = ":: OberlausitzDresden Scenario ::", version = OberlausitzDresdenScenario.VERSION, mixinStandardHelpOptions = true)
 @MATSimApplication.Prepare({
@@ -78,6 +81,11 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 		//		add simwrapper config module
 		SimWrapperConfigGroup simWrapper = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
 
+		simWrapper.defaultParams().context = "";
+		simWrapper.defaultParams().mapCenter = "14.5,51.53";
+		simWrapper.defaultParams().mapZoomLevel = 6.8;
+		simWrapper.defaultParams().shp = "../shp/oberlausitz.shp";
+
 		if (sample.isSet()){
 			config.controller().setOutputDirectory(sample.adjustName(config.controller().getOutputDirectory()));
 			config.plans().setInputFile(sample.adjustName(config.plans().getInputFile()));
@@ -99,6 +107,8 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 		scoringConfigGroup.setPerforming_utils_hr(performing);
 		scoringConfigGroup.setWriteExperiencedPlans(true);
 		scoringConfigGroup.setPathSizeLogitBeta(0.);
+		scoringConfigGroup.addActivityParams(new ScoringConfigGroup.ActivityParams("freight_start").setTypicalDuration(30 * 60.));
+		scoringConfigGroup.addActivityParams(new ScoringConfigGroup.ActivityParams("freight_end").setTypicalDuration(30 * 60.));
 
 //		set ride scoring params dependent from car params
 //		2.0 + 1.0 = alpha + 1
@@ -111,7 +121,40 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 		config.qsim().setUsePersonIdForMissingVehicleId(false);
 		config.routing().setAccessEgressType(RoutingConfigGroup.AccessEgressType.accessEgressModeToLink);
 
-//		 TODO: configure pt fare here
+//		configure annealing params
+		config.replanningAnnealer().setActivateAnnealingModule(true);
+		ReplanningAnnealerConfigGroup.AnnealingVariable annealingVar = new ReplanningAnnealerConfigGroup.AnnealingVariable();
+		annealingVar.setAnnealType(ReplanningAnnealerConfigGroup.AnnealOption.sigmoid);
+		annealingVar.setEndValue(0.01);
+		annealingVar.setHalfLife(0.5);
+		annealingVar.setShapeFactor(0.01);
+		annealingVar.setStartValue(0.45);
+		annealingVar.setDefaultSubpopulation("person");
+		config.replanningAnnealer().addAnnealingVariable(annealingVar);
+
+		//		set pt fare calc model to fareZoneBased = fare of vvo tarifzonen are paid for trips within fare zones
+//		every other trip: Deutschlandtarif
+//		for more info see PTFareModule / ChainedPtFareCalculator classes in vsp contrib
+		PtFareConfigGroup ptFareConfigGroup = ConfigUtils.addOrGetModule(config, PtFareConfigGroup.class);
+
+		FareZoneBasedPtFareParams vvo = new FareZoneBasedPtFareParams();
+		vvo.setTransactionPartner("VVO Tarifzone 10 Dresden");
+		vvo.setDescription("VVO Tarifzone 10 Dresden");
+		vvo.setOrder(1);
+		vvo.setFareZoneShp("../shp/vvo_tarifzone_10_dresden_utm32n.shp");
+
+		DistanceBasedPtFareParams germany = DistanceBasedPtFareParams.GERMAN_WIDE_FARE_2024;
+		germany.setTransactionPartner("Deutschlandtarif");
+		germany.setDescription("Deutschlandtarif");
+		germany.setOrder(2);
+
+		ptFareConfigGroup.addParameterSet(vvo);
+		ptFareConfigGroup.addParameterSet(germany);
+
+//		TODO before calib start
+//		TODO: load config and shp dir to cluster
+//		TODO: adapt reference modal split in calibrate.py
+
 //		TODO: emissions config
 
 		return config;
@@ -122,6 +165,19 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 
 		//		add longDistanceFreight as allowed modes together with car
 		PrepareNetwork.prepareFreightNetwork(scenario.getNetwork());
+
+		for (Link link : scenario.getNetwork().getLinks().values()) {
+			DisallowedNextLinks disallowed = NetworkUtils.getDisallowedNextLinks(link);
+			if (disallowed != null) {
+				link.getAllowedModes().forEach(disallowed::removeDisallowedLinkSequences);
+				if (disallowed.isEmpty()) {
+					NetworkUtils.removeDisallowedNextLinks(link);
+				}
+			}
+		}
+
+		ConfigUtils.writeConfig(scenario.getConfig(), "C:/Users/Simon/Desktop/wd/2025-02-24/oberlaustz-dresden.config.xml");
+		NetworkUtils.writeNetwork(scenario.getNetwork(), "C:/Users/Simon/Desktop/wd/2025-02-24/oberlaustz-dresden.network.xml.gz");
 
 //		TODO: emissions
 	}
@@ -136,7 +192,7 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 		controler.addOverridingModule(new AbstractModule() {
 			@Override
 			public void install() {
-//				TODO: pt fare module
+				install(new PtFareModule());
 				bind(ScoringParametersForPerson.class).to(IncomeDependentUtilityOfMoneyPersonScoringParameters.class).asEagerSingleton();
 
 				addTravelTimeBinding(TransportMode.ride).to(carTravelTime());
