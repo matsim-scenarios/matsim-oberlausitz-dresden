@@ -151,10 +151,6 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 		ptFareConfigGroup.addParameterSet(vvo);
 		ptFareConfigGroup.addParameterSet(germany);
 
-//		TODO before calib start
-//		TODO: load config and shp dir to cluster
-//		TODO: adapt reference modal split in calibrate.py
-
 //		TODO: emissions config
 
 		return config;
