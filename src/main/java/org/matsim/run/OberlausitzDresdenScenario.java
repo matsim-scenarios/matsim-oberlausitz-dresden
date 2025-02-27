@@ -171,10 +171,6 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 				}
 			}
 		}
-
-		ConfigUtils.writeConfig(scenario.getConfig(), "C:/Users/Simon/Desktop/wd/2025-02-24/oberlaustz-dresden.config.xml");
-		NetworkUtils.writeNetwork(scenario.getNetwork(), "C:/Users/Simon/Desktop/wd/2025-02-24/oberlaustz-dresden.network.xml.gz");
-
 //		TODO: emissions
 	}
 
