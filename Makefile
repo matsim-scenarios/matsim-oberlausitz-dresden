@@ -166,6 +166,7 @@ input/v2025.0/prepare-100pct.plans.xml.gz:
 		--output $@
 #	merge person and freight pops
 	$(sc) prepare merge-populations $@ $< --output $@
+	$(sc) prepare adapt-freight-plans $@ --output $@
 	$(sc) prepare downsample-population $@\
     	 --sample-size 1\
     	 --samples 0.25 0.1 0.01 0.001\
