@@ -11,7 +11,7 @@ public class RunIntegrationTest {
 
 		assert MATSimApplication.execute(OberlausitzDresdenScenario.class,
 				"--1pct",
-				"--iteration", "2") == 0 : "Must return non error code";
+				"--iterations", "1") == 0 : "Must return non error code";
 
 	}
 }
