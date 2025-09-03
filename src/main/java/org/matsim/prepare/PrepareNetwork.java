@@ -72,7 +72,7 @@ public class PrepareNetwork implements MATSimAppCommand {
 
 		log.info("For {} links {} has been added as an allowed mode.", linkCount, FREIGHT);
 
-		new MultimodalNetworkCleaner(network).run(Set.of(FREIGHT));
+		NetworkUtils.cleanNetwork(network, Set.of(FREIGHT));
 	}
 
 	/**
@@ -106,6 +106,6 @@ public class PrepareNetwork implements MATSimAppCommand {
 				}
 			}
 		}
-		new MultimodalNetworkCleaner(network).run(Set.of(TransportMode.drt));
+		NetworkUtils.cleanNetwork(network, Set.of(TransportMode.drt));
 	}
 }
