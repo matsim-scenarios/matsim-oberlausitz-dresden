@@ -31,7 +31,6 @@ import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.turnRestrictions.DisallowedNextLinks;
 import org.matsim.core.replanning.annealing.ReplanningAnnealerConfigGroup;
 import org.matsim.core.scoring.functions.ScoringParametersForPerson;
-import org.matsim.prepare.AdaptFreightTrafficToDetailedModes;
 import org.matsim.prepare.PrepareNetwork;
 import org.matsim.prepare.PreparePopulation;
 import org.matsim.simwrapper.SimWrapperConfigGroup;
@@ -47,8 +46,7 @@ import java.util.Set;
 		CreateNetworkFromSumo.class, CreateTransitScheduleFromGtfs.class, TrajectoryToPlans.class, GenerateShortDistanceTrips.class,
 		MergePopulations.class, ExtractRelevantFreightTrips.class, DownSamplePopulation.class, ExtractHomeCoordinates.class,
 		CreateLandUseShp.class, ResolveGridCoordinates.class, FixSubtourModes.class, AdjustActivityToLinkDistances.class, XYToLinks.class,
-		CleanNetwork.class, PrepareNetwork.class, SplitActivityTypesDuration.class, PreparePopulation.class, CreateCountsFromBAStData.class,
-		AdaptFreightTrafficToDetailedModes.class
+		CleanNetwork.class, PrepareNetwork.class, SplitActivityTypesDuration.class, PreparePopulation.class, CreateCountsFromBAStData.class
 })
 @MATSimApplication.Analysis({
 		LinkStats.class, CheckPopulation.class
