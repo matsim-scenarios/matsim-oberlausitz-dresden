@@ -1,5 +1,6 @@
 package org.matsim.run;
 
+import jakarta.annotation.Nullable;
 import org.matsim.analysis.personMoney.PersonMoneyEventsAnalysisModule;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
@@ -10,7 +11,7 @@ import org.matsim.application.analysis.traffic.LinkStats;
 import org.matsim.application.options.SampleOptions;
 import org.matsim.application.prepare.CreateLandUseShp;
 import org.matsim.application.prepare.counts.CreateCountsFromBAStData;
-import org.matsim.application.prepare.freight.tripExtraction.ExtractRelevantFreightTrips;
+import org.matsim.application.prepare.longDistanceFreightGER.tripExtraction.ExtractRelevantFreightTrips;
 import org.matsim.application.prepare.network.CleanNetwork;
 import org.matsim.application.prepare.network.CreateNetworkFromSumo;
 import org.matsim.application.prepare.population.*;
@@ -38,7 +39,6 @@ import org.matsim.simwrapper.SimWrapperModule;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 
-import javax.annotation.Nullable;
 
 @CommandLine.Command(header = ":: OberlausitzDresden Scenario ::", version = OberlausitzDresdenScenario.VERSION, mixinStandardHelpOptions = true)
 @MATSimApplication.Prepare({
@@ -83,10 +83,10 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 		//		add simwrapper config module
 		SimWrapperConfigGroup simWrapper = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
 
-		simWrapper.defaultParams().context = "";
-		simWrapper.defaultParams().mapCenter = "14.5,51.53";
-		simWrapper.defaultParams().mapZoomLevel = 6.8;
-		simWrapper.defaultParams().shp = "../shp/oberlausitz.shp";
+		simWrapper.defaultParams().setContext("");
+		simWrapper.defaultParams().setMapCenter("14.5,51.53");
+		simWrapper.defaultParams().setMapZoomLevel(6.8);
+		simWrapper.defaultParams().setShp("../shp/oberlausitz.shp");
 
 		if (sample.isSet()){
 			config.controller().setOutputDirectory(sample.adjustName(config.controller().getOutputDirectory()));
@@ -96,7 +96,7 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 			config.qsim().setFlowCapFactor(sample.getSample());
 			config.qsim().setStorageCapFactor(sample.getSample());
 			config.counts().setCountsScaleFactor(sample.getSample());
-			simWrapper.sampleSize = sample.getSample();
+			simWrapper.setSampleSize(sample.getSample());
 		}
 
 		config.plans().setActivityDurationInterpretation(PlansConfigGroup.ActivityDurationInterpretation.tryEndTimeThenDuration);

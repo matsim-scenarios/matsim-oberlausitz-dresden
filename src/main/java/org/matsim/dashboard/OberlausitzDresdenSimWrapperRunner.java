@@ -74,10 +74,10 @@ public final class OberlausitzDresdenSimWrapperRunner implements MATSimAppComman
 
 			SimWrapperConfigGroup simwrapperCfg = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
 			if (shp.isDefined()){
-				simwrapperCfg.defaultParams().shp = shp.getShapeFile();
+				simwrapperCfg.defaultParams().setShp(shp.getShapeFile());
 			}
 			//skip default dashboards
-			simwrapperCfg.defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
+			simwrapperCfg.setDefaultDashboards(SimWrapperConfigGroup.Mode.disabled);
 
 			//add dashboards according to command line parameters
 			if (trips == SimWrapperConfigGroup.Mode.enabled) {
