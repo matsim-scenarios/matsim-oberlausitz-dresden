@@ -29,7 +29,7 @@ public class OberlausitzDresdenDashboardProvider implements DashboardProvider {
 
 		TrafficCountsDashboard counts = new TrafficCountsDashboard()
 			.withModes(TransportMode.car, Set.of(TransportMode.car))
-			.withModes(TransportMode.truck, Set.of(OberlausitzDresdenScenario.FREIGHT));
+			.withModes(TransportMode.truck, OberlausitzDresdenScenario.TRUCK_MODES);
 
 		return List.of(trips, counts);
 	}
