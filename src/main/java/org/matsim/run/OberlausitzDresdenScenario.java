@@ -39,6 +39,8 @@ import org.matsim.simwrapper.SimWrapperModule;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 
+import java.util.Set;
+
 
 @CommandLine.Command(header = ":: OberlausitzDresden Scenario ::", version = OberlausitzDresdenScenario.VERSION, mixinStandardHelpOptions = true)
 @MATSimApplication.Prepare({
@@ -55,7 +57,7 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 
 	static final String VERSION = "v2025.0";
 
-	public static final String FREIGHT = "longDistanceFreight";
+	public static final Set<String> TRUCK_MODES = Set.of("truck8t", "truck18t", "truck40t");
 
 	@CommandLine.Mixin
 	private final SampleOptions sample = new SampleOptions(100, 25, 10, 1);

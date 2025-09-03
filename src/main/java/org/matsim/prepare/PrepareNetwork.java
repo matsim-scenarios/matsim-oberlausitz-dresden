@@ -12,14 +12,13 @@ import org.matsim.application.options.ShpOptions;
 import org.matsim.contrib.emissions.HbefaRoadTypeMapping;
 import org.matsim.contrib.emissions.OsmHbefaMapping;
 import org.matsim.core.network.NetworkUtils;
-import org.matsim.core.network.algorithms.MultimodalNetworkCleaner;
 import org.matsim.core.utils.geometry.geotools.MGC;
 import picocli.CommandLine;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.matsim.run.OberlausitzDresdenScenario.FREIGHT;
+import static org.matsim.run.OberlausitzDresdenScenario.TRUCK_MODES;
 
 @CommandLine.Command(
 		name = "network",
@@ -53,7 +52,7 @@ public class PrepareNetwork implements MATSimAppCommand {
 	}
 
 	/**
-	 * prepare link attributes for freight and truck as allowed modes together with car.
+	 * adds truck modes to links where cars are allowed.
 	 */
 	public static void prepareFreightNetwork(Network network) {
 		int linkCount = 0;
@@ -64,15 +63,15 @@ public class PrepareNetwork implements MATSimAppCommand {
 
 			// allow freight traffic together with cars
 			if (modes.contains(TransportMode.car)) {
-				modes.add(FREIGHT);
+				modes.addAll(TRUCK_MODES);
 				linkCount++;
 			}
 			link.setAllowedModes(modes);
 		}
 
-		log.info("For {} links {} has been added as an allowed mode.", linkCount, FREIGHT);
+		log.info("For {} links {} has been added as an allowed mode.", linkCount, TRUCK_MODES);
 
-		NetworkUtils.cleanNetwork(network, Set.of(FREIGHT));
+		NetworkUtils.cleanNetwork(network, TRUCK_MODES);
 	}
 
 	/**
