@@ -114,7 +114,8 @@ input/plans-longHaulFreight.xml.gz:
 	 --target-crs $(CRS)\
 	 --shp $(shared)/data/oberlausitz-area/oberlausitz.shp --shp-crs $(CRS)\
 	 --cut-on-boundary\
-	 --LegMode "longDistanceFreight"\
+	 --legMode "truck40t"\
+	 --subpopulation "longDistanceFreight"\
 	 --output $@
 
 # trajectory-to-plans formerly was a collection of methods to prepare a given population
