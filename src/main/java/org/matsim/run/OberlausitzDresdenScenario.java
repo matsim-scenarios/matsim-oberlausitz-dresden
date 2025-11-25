@@ -35,6 +35,8 @@ import org.matsim.prepare.PrepareNetwork;
 import org.matsim.prepare.PreparePopulation;
 import org.matsim.simwrapper.SimWrapperConfigGroup;
 import org.matsim.simwrapper.SimWrapperModule;
+import org.matsim.smallScaleCommercialTrafficGeneration.GenerateSmallScaleCommercialTrafficDemand;
+import org.matsim.smallScaleCommercialTrafficGeneration.prepare.CreateDataDistributionOfStructureData;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 
@@ -46,14 +48,15 @@ import java.util.Set;
 		CreateNetworkFromSumo.class, CreateTransitScheduleFromGtfs.class, TrajectoryToPlans.class, GenerateShortDistanceTrips.class,
 		MergePopulations.class, ExtractRelevantFreightTrips.class, DownSamplePopulation.class, ExtractHomeCoordinates.class,
 		CreateLandUseShp.class, ResolveGridCoordinates.class, FixSubtourModes.class, AdjustActivityToLinkDistances.class, XYToLinks.class,
-		CleanNetwork.class, PrepareNetwork.class, SplitActivityTypesDuration.class, PreparePopulation.class, CreateCountsFromBAStData.class
+		CleanNetwork.class, PrepareNetwork.class, SplitActivityTypesDuration.class, PreparePopulation.class, CreateCountsFromBAStData.class,
+		CreateDataDistributionOfStructureData.class, GenerateSmallScaleCommercialTrafficDemand.class
 })
 @MATSimApplication.Analysis({
 		LinkStats.class, CheckPopulation.class
 })
 public class OberlausitzDresdenScenario extends MATSimApplication {
 
-	static final String VERSION = "v2025.0";
+	static final String VERSION = "v1.0";
 
 	public static final Set<String> TRUCK_MODES = Set.of("truck8t", "truck18t", "truck40t");
 

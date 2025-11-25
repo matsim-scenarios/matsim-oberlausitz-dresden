@@ -118,6 +118,41 @@ input/plans-longHaulFreight.xml.gz:
 	 --subpopulation "longDistanceFreight"\
 	 --output $@
 
+$p/commercialFacilities.xml.gz:
+	$(sc) prepare create-data-distribution-of-structure-data\
+	 --outputFacilityFile $@\
+	 --outputDataDistributionFile $p/dataDistributionPerZone.csv\
+	 --landuseConfiguration useOSMBuildingsAndLanduse\
+ 	 --regionsShapeFileName $(berlin)/input/shp/region_4326.shp\
+	 --regionsShapeRegionColumn "GEN"\
+	 --zoneShapeFileName $(berlin)/input/shp/berlinBrandenburg_Zones_VKZ_4326.shp\
+	 --zoneShapeFileNameColumn "id"\
+	 --buildingsShapeFileName $(berlin)/input/shp/buildings_BerlinBrandenburg_4326.shp\
+	 --shapeFileBuildingTypeColumn "type"\
+	 --landuseShapeFileName $(berlin)/input/shp/berlinBrandenburg_landuse_4326.shp\
+	 --shapeFileLanduseTypeColumn "fclass"\
+	 --shapeCRS "EPSG:4326"\
+	 --pathToInvestigationAreaData input/commercialTrafficAreaData.csv
+
+$p/berlin-small-scale-commercialTraffic-$V-25pct.plans.xml.gz: $p/berlin-$V-network.xml.gz $p/commercialFacilities.xml.gz
+	$(sc) prepare generate-small-scale-commercial-traffic\
+	  input/$V/berlin-$V.config.xml\
+	 --pathToDataDistributionToZones $p/dataDistributionPerZone.csv\
+	 --pathToCommercialFacilities $(notdir $(word 2,$^))\
+	 --sample 0.25\
+	 --jspritIterations 10\
+	 --creationOption createNewCarrierFile\
+	 --network $(notdir $<)\
+	 --smallScaleCommercialTrafficType completeSmallScaleCommercialTraffic\
+	 --zoneShapeFileName $(berlin)/input/shp/berlinBrandenburg_Zones_VKZ_4326.shp\
+	 --zoneShapeFileNameColumn "id"\
+	 --shapeCRS "EPSG:4326"\
+	 --numberOfPlanVariantsPerAgent 5\
+	 --nameOutputPopulation $(notdir $@)\
+	 --pathOutput output/commercialPersonTraffic
+
+	mv output/commercialPersonTraffic/$(notdir $@) $@
+
 # trajectory-to-plans formerly was a collection of methods to prepare a given population
 # now, most of the functions of this class do have their own class (downsample, splitduration types...)
 # it basically only transforms the old attribute format to the new one
