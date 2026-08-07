@@ -97,6 +97,12 @@
 			<scope>test</scope>
 		</dependency>
 
+		<dependency>
+			<groupId>net.bhl.matsim</groupId>
+			<artifactId>matsim-uam</artifactId>
+			<version>5.0.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
@@ -286,6 +292,11 @@
 		<repository>
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
+		</repository>
+
+		<repository>
+			<id>eth-ivt-uam</id>
+			<url>https://packagecloud.io/eth-ivt/uam/maven2</url>
 		</repository>
 	</repositories>
 
