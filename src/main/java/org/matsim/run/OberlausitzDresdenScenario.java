@@ -26,6 +26,7 @@ import org.matsim.contrib.drt.estimator.impl.DirectTripBasedDrtEstimator;
 import org.matsim.contrib.drt.estimator.impl.distribution.NormalDistributionGenerator;
 import org.matsim.contrib.drt.estimator.impl.trip_estimation.ConstantRideDurationEstimator;
 import org.matsim.contrib.drt.estimator.impl.waiting_time_estimation.ConstantWaitingTimeEstimator;
+import org.matsim.contrib.drt.fare.DrtFareParams;
 import org.matsim.contrib.drt.optimizer.constraints.DefaultDrtOptimizationConstraintsSet;
 import org.matsim.contrib.drt.optimizer.constraints.DrtOptimizationConstraintsParams;
 import org.matsim.contrib.drt.optimizer.insertion.extensive.ExtensiveInsertionSearchParams;
@@ -108,6 +109,12 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 
 	@CommandLine.Option(names = "--service-area", description = "ground coverage area of uam", defaultValue = "/Users/luchengqi/Documents/MATSimScenarios/Oberlausitz-Dresden/shp/uam-service-area.shp")
 	protected static String serviceArea;
+
+	@CommandLine.Option(names = "--base-fare", description = "base fare of the uam trips", defaultValue = "0")
+	protected static double baseFare;
+
+	@CommandLine.Option(names = "--dist-fare", description = "distance fare per meter", defaultValue = "0.0003")
+	protected static double distanceFare;
 
 	public OberlausitzDresdenScenario(@Nullable Config config) {
 		super(config);
@@ -311,6 +318,12 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 //			drtConfigGroup.transitStopFile = "drt-stops.xml"; // TODO
 //			drtConfigGroup.drtServiceAreaShapeFile = "service_area_shp.shp"; // TODO
 			drtConfigGroup.stopDuration = 60.;
+
+			// set uam fare
+			DrtFareParams drtFareParams = new DrtFareParams();
+			drtFareParams.baseFare = baseFare;
+			drtFareParams.distanceFare_m = distanceFare;
+			drtConfigGroup.addParameterSet(drtFareParams);
 
 //			optimization params now are in its own paramSet, hence the below lines
 			DrtOptimizationConstraintsParams optimizationConstraints = new DrtOptimizationConstraintsParams();
