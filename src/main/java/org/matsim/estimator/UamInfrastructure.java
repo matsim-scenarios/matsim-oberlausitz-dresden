@@ -20,6 +20,12 @@ import java.util.Map;
 import java.util.Set;
 
 public class UamInfrastructure {
+	private static final String DRESDEN = "Dresden";
+	private static final String HOYERSWERDA = "Hoyerswerda";
+	private static final String LEIPZIG = "Leipzig";
+	private static final String COTTBUS = "Cottbus";
+	private static final String CHEMNITZ = "Chemnitz";
+
 	public static void prepareUamNetwork(Network network, String serviceAreaShp, Map<String, Set<Coord>> vertiportsLocationsPerRegions,
 										 Set<Pair<String, String>> connections) {
 		Set<Node> relevantNodes = new HashSet<>();
@@ -88,27 +94,53 @@ public class UamInfrastructure {
 	private static Map<String, Set<Coord>> prepareVertiportsLocationsPerRegions(Network network) {
 		Map<String, Set<Coord>> vertiportsLocationsPerRegions = new HashMap<>();
 
-		// Dresden
-		vertiportsLocationsPerRegions.put("Dresden", new HashSet<>());
-		// DD Hbf
-		vertiportsLocationsPerRegions.get("Dresden").add(network.getNodes().get(Id.createNodeId("11768490")).getCoord());
-		// DD Albertplatz
-		vertiportsLocationsPerRegions.get("Dresden").add(network.getNodes().get(Id.createNodeId("24969766")).getCoord());
+		// Dresden: the only region with two vertiports, one on each side of the Elbe
+		vertiportsLocationsPerRegions.put(DRESDEN, new HashSet<>());
+		// DD Hbf (Altstadt)
+		vertiportsLocationsPerRegions.get(DRESDEN).add(getNodeCoord(network, "11768490"));
+		// DD Albertplatz (Neustadt)
+		vertiportsLocationsPerRegions.get(DRESDEN).add(getNodeCoord(network, "24969766"));
 
-		// Hoyerswerda
-		vertiportsLocationsPerRegions.put("Hoyerswerda", new HashSet<>());
-		// HY Altstadt
-		vertiportsLocationsPerRegions.get("Hoyerswerda").add(network.getNodes().get(Id.createNodeId("1701429426")).getCoord());
-		// HY Neustadt
-		vertiportsLocationsPerRegions.get("Hoyerswerda").add(network.getNodes().get(Id.createNodeId("cluster_103756811_3148855397")).getCoord());
+		// Hoyerswerda: HY Altstadt (city centre)
+		vertiportsLocationsPerRegions.put(HOYERSWERDA, new HashSet<>());
+		vertiportsLocationsPerRegions.get(HOYERSWERDA).add(getNodeCoord(network, "1701429426"));
+
+		// Leipzig: city centre, east of Augustusplatz
+		vertiportsLocationsPerRegions.put(LEIPZIG, new HashSet<>());
+		vertiportsLocationsPerRegions.get(LEIPZIG).add(getNodeCoord(network, "254599114"));
+
+		// Cottbus: city centre, between Hbf and Altmarkt
+		vertiportsLocationsPerRegions.put(COTTBUS, new HashSet<>());
+		vertiportsLocationsPerRegions.get(COTTBUS).add(getNodeCoord(network, "2339274980"));
+
+		// Chemnitz: city centre
+		vertiportsLocationsPerRegions.put(CHEMNITZ, new HashSet<>());
+		vertiportsLocationsPerRegions.get(CHEMNITZ).add(getNodeCoord(network, "3888083281"));
 
 		return vertiportsLocationsPerRegions;
 	}
 
 	private static Set<Pair<String, String>> prepareConnections() {
 		Set<Pair<String, String>> connections = new HashSet<>();
-		connections.add(Pair.of("Dresden", "Hoyerswerda"));
+		// Connection between Dresden and other bubbles
+		connections.add(Pair.of(DRESDEN, HOYERSWERDA));
+		connections.add(Pair.of(DRESDEN, LEIPZIG));
+		connections.add(Pair.of(DRESDEN, CHEMNITZ));
+		connections.add(Pair.of(DRESDEN, COTTBUS));
+		// Connection not linked to Dresden
+//		connections.add(Pair.of(COTTBUS, LEIPZIG));
+//		connections.add(Pair.of(COTTBUS, HOYERSWERDA));
+//		connections.add(Pair.of(LEIPZIG, CHEMNITZ));
 		return connections;
+	}
+
+	private static Coord getNodeCoord(Network network, String nodeId) {
+		Node node = network.getNodes().get(Id.createNodeId(nodeId));
+		if (node == null) {
+			throw new IllegalArgumentException("Vertiport node " + nodeId + " does not exist in the network. " +
+				"Please check whether the correct network file is used.");
+		}
+		return node.getCoord();
 	}
 
 	private static Node getClosestNode(Coord coord, Set<Node> relevantNodes) {

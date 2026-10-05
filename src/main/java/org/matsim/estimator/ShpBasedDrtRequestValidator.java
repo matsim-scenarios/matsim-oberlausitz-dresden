@@ -1,7 +1,6 @@
 package org.matsim.estimator;
 
 import org.geotools.api.feature.simple.SimpleFeature;
-import org.geotools.filter.function.GeometryTransformation;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Point;
 import org.matsim.api.core.v01.Coord;

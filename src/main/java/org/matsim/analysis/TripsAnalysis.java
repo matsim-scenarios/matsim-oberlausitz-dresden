@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Trip analysis.
+ */
 public class TripsAnalysis {
 	private static final String CONFIG_PATH = "input/v2025.0/oberlausitz-dresden-v2025.0-10pct.config.xml";
 	private static final String NETWORK_FILE = "/Users/luchengqi/Documents/matsim-scenarios/oberlausitz-dresden/oberlausitz-dresden-v2025.0-network-with-pt-and-uam.xml.gz";

@@ -107,7 +107,7 @@ public class OberlausitzDresdenScenario extends MATSimApplication {
 	@CommandLine.Option(names = "--typ-wt", description = "typical waiting time (base)", defaultValue = "600")
 	protected double typicalWaitTime;
 
-	@CommandLine.Option(names = "--service-area", description = "ground coverage area of uam", defaultValue = "/Users/luchengqi/Documents/MATSimScenarios/Oberlausitz-Dresden/shp/uam-service-area.shp")
+	@CommandLine.Option(names = "--service-area", description = "ground coverage area of uam", defaultValue = "/Users/luchengqi/Documents/matsim-scenarios/oberlausitz-dresden/shp/uam-service-area-extended.shp")
 	protected static String serviceArea;
 
 	@CommandLine.Option(names = "--base-fare", description = "base fare of the uam trips", defaultValue = "0")
